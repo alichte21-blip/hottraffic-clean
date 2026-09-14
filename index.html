@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0e13" />
+  <title>HOT TRAFFIC TAXI</title>
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="stylesheet" href="./style.css?v=1.0.0" />
+</head>
+<body>
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand-wrap">
+      <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div>
+        <div class="brand">HOT TRAFFIC <b>TAXI</b></div>
+        <div class="subline"><span class="live-dot"></span><span id="cityLabel">BERLIN LIVE</span></div>
+      </div>
+    </div>
+    <button class="icon-btn" id="shareBtn" aria-label="App teilen" title="App teilen">↗</button>
+  </header>
+
+  <main>
+    <section class="hero-card">
+      <div class="eyebrow">LIVE MOBILITY</div>
+      <h1>Bedarf sehen.<br><span>Chancen nutzen.</span></h1>
+      <p>Direkter Live-Bedarf zwischen Fahrgästen und Taxis – ohne Vermittlung, ohne Funkstatus.</p>
+      <div class="role-switch" aria-label="Modus auswählen">
+        <button class="role-btn active" data-role="passenger"><span class="role-icon passenger-icon"></span><span><b>Fahrgast</b><small>Taxi-Bedarf senden</small></span></button>
+        <button class="role-btn" data-role="driver"><span class="role-icon taxi-icon"></span><span><b>Fahrer</b><small>Live-Bedarf sehen</small></span></button>
+      </div>
+    </section>
+
+    <section class="stats-grid">
+      <div class="stat"><small>FAHRER LIVE</small><strong id="driverCount">0</strong></div>
+      <div class="stat"><small>BEDARF LIVE</small><strong id="demandCount">0</strong></div>
+      <div class="stat"><small>STATUS</small><strong class="status-ok" id="apiStatus">VERBINDE…</strong></div>
+    </section>
+
+    <section class="map-card">
+      <div class="map-head">
+        <div><small id="mapEyebrow">FAHRGAST-MODUS</small><h2 id="mapTitle">Taxis in deiner Nähe</h2></div>
+        <button id="locateBtn" class="locate-btn">◎ Standort</button>
+      </div>
+      <div id="map"></div>
+      <div class="map-legend">
+        <span><i class="legend-taxi"></i> Taxi</span>
+        <span><i class="legend-passenger"></i> Fahrgastbedarf</span>
+      </div>
+    </section>
+
+    <section id="passengerPanel" class="panel active">
+      <div class="panel-head"><div><small>NEUER BEDARF</small><h2>Taxi anfragen</h2></div><span class="pill">LIVE</span></div>
+      <div class="form-grid">
+        <label><span>Personen</span><select id="people"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></label>
+        <label><span>Anlass</span><select id="category"><option>Sonstiges</option><option>Flughafen</option><option>Bahnhof</option><option>Event</option><option>Nachtleben</option><option>Kurzstrecke</option></select></label>
+        <label class="wide"><span>Ziel (optional)</span><input id="destination" maxlength="100" placeholder="z. B. BER Terminal 1" /></label>
+        <label class="wide"><span>Hinweis (optional)</span><input id="note" maxlength="120" placeholder="z. B. 2 Koffer" /></label>
+      </div>
+      <div class="action-row">
+        <button class="primary" id="sendDemandBtn">Bedarf senden</button>
+        <button class="secondary" id="cancelDemandBtn" disabled>Bedarf beenden</button>
+      </div>
+      <p class="microcopy" id="passengerMessage">Dein genauer Standort wird nur grob gerastert übertragen.</p>
+    </section>
+
+    <section id="driverPanel" class="panel">
+      <div class="panel-head"><div><small>FAHRER LIVE</small><h2>Taxi sichtbar schalten</h2></div><span class="pill gold">90 SEK.</span></div>
+      <p class="driver-copy">Aktiviere LIVE. Dein Standort wird regelmäßig aktualisiert und verschwindet automatisch, wenn kein Signal mehr kommt.</p>
+      <div class="action-row">
+        <button class="primary gold-btn" id="goLiveBtn">Taxi LIVE schalten</button>
+        <button class="secondary" id="goOfflineBtn" disabled>Offline</button>
+      </div>
+      <p class="microcopy" id="driverMessage">Noch nicht live.</p>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="navLive"><span>⌖</span>Live</button>
+    <button class="nav-btn" id="navRefresh"><span>↻</span>Aktualisieren</button>
+    <button class="nav-btn" id="navShare"><span>↗</span>Teilen</button>
+  </nav>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="./app.js?v=1.0.0"></script>
+</body>
+</html>
