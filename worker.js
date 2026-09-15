@@ -198,7 +198,7 @@ export default {
    }
 
    if(u.pathname==='/api/driver/login' && req.method==='POST'){
-      const b=await json(req);
+      const b=await req.json();
       if(String(b.code||'')!==driverAccessCode(env)) return json({error:'Fahrer-Code ist nicht korrekt.'},403);
       const token=newDriverToken();
       await env.DB.prepare("INSERT INTO driver_access(token,created_at,revoked) VALUES(?,?,0)").bind(token,now()).run();
