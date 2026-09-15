@@ -80,5 +80,23 @@
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="./app.js?v=1.0.8-driver-access"></script>
+
+  <div id="driverAccessModal" class="ht-modal" hidden>
+    <div class="ht-modal-backdrop"></div>
+    <section class="driver-access-card" role="dialog" aria-modal="true" aria-labelledby="driverAccessTitle">
+      <div class="driver-access-kicker">HOT TRAFFIC TAXI</div>
+      <h2 id="driverAccessTitle">Fahrerzugang</h2>
+      <p>Dieser Bereich ist ausschließlich für freigeschaltete Fahrer.</p>
+      <label for="driverAccessCode">Fahrer-Code</label>
+      <input id="driverAccessCode" type="password" autocomplete="off" placeholder="Code eingeben">
+      <div id="driverAccessError" class="driver-access-error" aria-live="polite"></div>
+      <div class="driver-access-actions">
+        <button id="driverAccessCancel" type="button" class="driver-access-cancel">Abbrechen</button>
+        <button id="driverAccessSubmit" type="button" class="driver-access-submit">Freischalten</button>
+      </div>
+      <div class="driver-access-note">LIVE MOBILITY · DRIVER ACCESS</div>
+    </section>
+  </div>
+
 </body>
 </html>

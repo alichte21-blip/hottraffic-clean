@@ -50,18 +50,30 @@
   }
   async function markActivity(){ try{ await api('/api/activity',{method:'POST',body:JSON.stringify({role:state.role,client_id:state.driverId})}); }catch{} }
 
+  let driverAccessResolve=null;
+  function openDriverAccessModal(){
+    const modal=document.getElementById('driverAccessModal'), input=document.getElementById('driverAccessCode'), error=document.getElementById('driverAccessError');
+    error.textContent=''; input.value=''; modal.hidden=false; document.body.classList.add('modal-open');
+    setTimeout(()=>input.focus(),80);
+    return new Promise(resolve=>{driverAccessResolve=resolve;});
+  }
+  function closeDriverAccessModal(){document.getElementById('driverAccessModal').hidden=true;document.body.classList.remove('modal-open');}
+  function finishDriverAccess(value){const resolve=driverAccessResolve;driverAccessResolve=null;if(!value)closeDriverAccessModal();if(resolve)resolve(value);}
+  function showDriverAccessError(message){const e=document.getElementById('driverAccessError'),i=document.getElementById('driverAccessCode');e.textContent=message;i.select();i.focus();}
+
   async function unlockDriver(){
     if(state.driverToken){
       try{ const v=await api('/api/driver/verify'); if(v.ok) return true; }catch{}
       state.driverToken=''; sessionStorage.removeItem('ht_driver_token');
     }
-    const code=prompt('FAHRERZUGANG\nBitte Fahrer-Code eingeben:');
+    const code=await openDriverAccessModal();
     if(!code) return false;
     try{
       const r=await api('/api/driver/login',{method:'POST',body:JSON.stringify({code})});
       state.driverToken=r.token; sessionStorage.setItem('ht_driver_token',r.token);
+      closeDriverAccessModal();
       return true;
-    }catch(e){ alert(e.message||'Fahrerzugang nicht möglich.'); return false; }
+    }catch(e){ showDriverAccessError(e.message||'Fahrer-Code ist nicht korrekt.'); return false; }
   }
 
   async function chooseRole(role,{scroll=false}={}){
@@ -72,7 +84,10 @@
   function setRole(role,{scroll=false}={}){
     if(!['passenger','driver'].includes(role)) role='passenger';
     state.role=role; localStorage.setItem('ht_role',role);
-    document.querySelectorAll('.role-btn').forEach(b=>b.classList.toggle('active',b.dataset.role===role));
+    document.getElementById('driverAccessCancel')?.addEventListener('click',()=>finishDriverAccess(''));
+  document.getElementById('driverAccessSubmit')?.addEventListener('click',()=>{const c=document.getElementById('driverAccessCode').value.trim();if(c)finishDriverAccess(c);});
+  document.getElementById('driverAccessCode')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const c=e.currentTarget.value.trim();if(c)finishDriverAccess(c);}if(e.key==='Escape')finishDriverAccess('');});
+  document.querySelectorAll('.role-btn').forEach(b=>b.classList.toggle('active',b.dataset.role===role));
     $('passengerPanel').classList.toggle('active',role==='passenger'); $('driverPanel').classList.toggle('active',role==='driver');
     setText('mapEyebrow',role==='passenger'?'FAHRGAST-MODUS':'FAHRER-MODUS'); setText('mapTitle',role==='passenger'?'Taxis in deiner Nähe':'Live-Bedarf in deiner Nähe');
     document.querySelectorAll('[data-nav-role]').forEach(b=>b.classList.toggle('active',b.dataset.navRole===role));
