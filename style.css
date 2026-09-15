@@ -25,3 +25,9 @@ main{padding:14px}.hero-card,.map-card,.panel{background:linear-gradient(180deg,
 .passenger-pin .bag{position:absolute;width:10px;height:14px;right:5px;top:26px;background:#08212b;border-radius:3px;z-index:4}
 .passenger-pin .bag:before{content:"";position:absolute;width:6px;height:5px;border:2px solid #08212b;border-bottom:0;border-radius:5px 5px 0 0;left:1px;top:-5px}
 @media (max-width:520px){.brand-banner-img{max-height:155px}.brand-share{width:38px;height:38px;right:10px;bottom:10px}}
+
+/* 1.0.7 — LIVE marker visibility fix only */
+#map .leaflet-marker-pane{z-index:600!important;pointer-events:auto}
+#map .leaflet-marker-icon{visibility:visible!important;opacity:1!important}
+#map .taxi-marker,#map .passenger-marker,#map .user-marker{display:block!important;overflow:visible!important}
+#map .taxi-pin,#map .passenger-pin,#map .user-dot{visibility:visible!important;opacity:1!important}
