@@ -76,8 +76,25 @@
     finally{ btn.disabled=false; }
   }
   async function cancelDemand(){
-    if(!state.hotspotId) return; try{ await api('/api/hotspots/'+state.hotspotId,{method:'DELETE'}); }catch{}
-    state.hotspotId=''; localStorage.removeItem('ht_hotspot_id'); $('cancelDemandBtn').disabled=true; setText('passengerMessage','Bedarf beendet.'); refresh();
+    if(!state.hotspotId) return;
+    const endedId=state.hotspotId;
+    try{
+      await api('/api/hotspots/'+endedId,{method:'DELETE'});
+      const verify=await api('/api/state');
+      if((verify.hotspots||[]).some(h=>h.id===endedId)) throw new Error('Bedarf ist nach dem Beenden noch LIVE sichtbar.');
+      state.hotspotId=''; localStorage.removeItem('ht_hotspot_id'); $('cancelDemandBtn').disabled=true;
+      drawState(verify); setText('passengerMessage','✓ Geprüft: Bedarf beendet und aus LIVE entfernt.');
+    }catch(e){ setText('passengerMessage','Fehler beim Beenden: '+e.message); }
+  }
+
+  async function reconcileOwnDemand(){
+    if(!state.hotspotId) return;
+    try{
+      const data=await api('/api/state');
+      if(!(data.hotspots||[]).some(h=>h.id===state.hotspotId)){
+        state.hotspotId=''; localStorage.removeItem('ht_hotspot_id'); $('cancelDemandBtn').disabled=true;
+      } else { $('cancelDemandBtn').disabled=false; }
+    }catch{}
   }
 
   async function driverHeartbeat(){
@@ -100,6 +117,6 @@
   $('goLiveBtn').addEventListener('click',goLive); $('goOfflineBtn').addEventListener('click',goOffline);
   $('shareBtn').addEventListener('click',share); $('navShare').addEventListener('click',share); $('navRefresh').addEventListener('click',refresh);
 
-  initMap(); setRole(state.role); refresh(); state.refreshTimer=setInterval(refresh,15000);
+  initMap(); setRole(state.role); refresh(); reconcileOwnDemand(); state.refreshTimer=setInterval(()=>{refresh(); reconcileOwnDemand();},15000);
   if(state.hotspotId) $('cancelDemandBtn').disabled=false;
 })();

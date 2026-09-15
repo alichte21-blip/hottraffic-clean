@@ -134,10 +134,12 @@ export default {
     const b=await req.json();
     const lat=Number(b.lat),lng=Number(b.lng),people=clamp(parseInt(b.people)||1,1,99);
     if(!Number.isFinite(lat)||!Number.isFinite(lng)||Math.abs(lat)>90||Math.abs(lng)>180) return json({error:'location_required'},400);
-    const hid=id(), created=now(), expires=created+60*60*1000;
+    const hid=id(), created=now();
+    const timeWindow=clamp(parseInt(b.time_window)||30,15,60);
+    const expires=created+timeWindow*60*1000;
     const pref='taxi';
     await db.prepare('INSERT INTO hotspots (id,lat,lng,category,people,desired_time,note,destination,time_window,service_preference,created_at,expires_at,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
-      .bind(hid,coarse(lat),coarse(lng),String(b.category||'Sonstiges').slice(0,60),people,String(b.desired_time||'').slice(0,5),String(b.note||'').slice(0,120),String(b.destination||'').slice(0,100),clamp(parseInt(b.time_window)||30,15,60),pref,created,expires,'active').run();
+      .bind(hid,coarse(lat),coarse(lng),String(b.category||'Sonstiges').slice(0,60),people,String(b.desired_time||'').slice(0,5),String(b.note||'').slice(0,120),String(b.destination||'').slice(0,100),timeWindow,pref,created,expires,'active').run();
     await db.prepare('INSERT INTO demand_events (id,hotspot_id,service_preference,people,category,created_at) VALUES (?,?,?,?,?,?)').bind(id(),hid,pref,people,String(b.category||'Sonstiges').slice(0,60),created).run();
     // Read-after-write is deliberate: success is returned only after D1 can read the row back.
     const saved=await db.prepare("SELECT id,lat,lng,category,people,desired_time,note,destination,time_window,service_preference,created_at,expires_at,status FROM hotspots WHERE id=?").bind(hid).first();
