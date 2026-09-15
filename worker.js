@@ -1,4 +1,4 @@
-const API_VERSION='1.0-clean';
+const API_VERSION='1.0.2-clean';
 const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json;charset=UTF-8','cache-control':'no-store',...extra}});
 const now=()=>Date.now();
 const id=()=>crypto.randomUUID();

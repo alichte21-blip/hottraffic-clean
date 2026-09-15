@@ -1,7 +1,7 @@
 (() => {
   const $ = (id) => document.getElementById(id);
   const state = {
-    role: 'passenger', map: null, userPos: null, userMarker: null,
+    role: localStorage.getItem('ht_role') || 'passenger', map: null, userPos: null, userMarker: null,
     liveLayers: [], hotspotId: localStorage.getItem('ht_hotspot_id') || '',
     driverId: localStorage.getItem('ht_driver_id') || crypto.randomUUID(),
     driverLive: false, heartbeat: null, refreshTimer: null
@@ -38,12 +38,15 @@
   }
   async function markActivity(){ try{ await api('/api/activity',{method:'POST',body:JSON.stringify({role:state.role,client_id:state.driverId})}); }catch{} }
 
-  function setRole(role){
-    state.role=role;
+  function setRole(role,{scroll=false}={}){
+    if(!['passenger','driver'].includes(role)) role='passenger';
+    state.role=role; localStorage.setItem('ht_role',role);
     document.querySelectorAll('.role-btn').forEach(b=>b.classList.toggle('active',b.dataset.role===role));
     $('passengerPanel').classList.toggle('active',role==='passenger'); $('driverPanel').classList.toggle('active',role==='driver');
     setText('mapEyebrow',role==='passenger'?'FAHRGAST-MODUS':'FAHRER-MODUS'); setText('mapTitle',role==='passenger'?'Taxis in deiner Nähe':'Live-Bedarf in deiner Nähe');
+    document.querySelectorAll('[data-nav-role]').forEach(b=>b.classList.toggle('active',b.dataset.navRole===role));
     markActivity();
+    if(scroll){ const panel=role==='passenger'?$('passengerPanel'):$('driverPanel'); panel?.scrollIntoView({behavior:'smooth',block:'start'}); }
   }
 
   function locate({center=true}={}){
@@ -66,7 +69,9 @@
       if(state.hotspotId){ try{await api('/api/hotspots/'+state.hotspotId,{method:'DELETE'});}catch{} }
       const data=await api('/api/hotspots',{method:'POST',body:JSON.stringify({lat:pos.lat,lng:pos.lng,people:Number($('people').value)||1,category:$('category').value,destination:$('destination').value.trim(),note:$('note').value.trim(),time_window:30,service_preference:'taxi'})});
       state.hotspotId=data.hotspot.id; localStorage.setItem('ht_hotspot_id',state.hotspotId); $('cancelDemandBtn').disabled=false;
-      setText('passengerMessage','✓ Bedarf ist jetzt LIVE und für Fahrer sichtbar.'); await refresh();
+      const verify=await api('/api/state');
+      if(!(verify.hotspots||[]).some(h=>h.id===state.hotspotId)) throw new Error('Bedarf wurde gespeichert, ist aber im LIVE-Status noch nicht sichtbar.');
+      drawState(verify); setText('passengerMessage','✓ Geprüft: Bedarf ist in D1 gespeichert und für Fahrer LIVE sichtbar.');
     }catch(e){ setText('passengerMessage','Fehler: '+e.message); }
     finally{ btn.disabled=false; }
   }
@@ -77,7 +82,7 @@
 
   async function driverHeartbeat(){
     if(!state.driverLive) return;
-    try{ const pos=await locate({center:false}); await api('/api/vehicles/heartbeat',{method:'POST',body:JSON.stringify({id:state.driverId,lat:pos.lat,lng:pos.lng,providers:['taxi']})}); setText('driverMessage','✓ Taxi ist LIVE. Standort wird automatisch aktualisiert.'); await refresh(); }
+    try{ const pos=await locate({center:false}); await api('/api/vehicles/heartbeat',{method:'POST',body:JSON.stringify({id:state.driverId,lat:pos.lat,lng:pos.lng,providers:['taxi']})}); const verify=await api('/api/state'); if(!(verify.vehicles||[]).some(v=>v.id===state.driverId)) throw new Error('Fahrer wurde gespeichert, ist aber im LIVE-Status noch nicht sichtbar.'); drawState(verify); setText('driverMessage','✓ Geprüft: Taxi ist in D1 gespeichert und LIVE sichtbar.'); }
     catch(e){ setText('driverMessage','LIVE-Fehler: '+e.message); }
   }
   async function goLive(){ state.driverLive=true; $('goLiveBtn').disabled=true; $('goOfflineBtn').disabled=false; setText('driverMessage','LIVE wird aktiviert …'); await driverHeartbeat(); clearInterval(state.heartbeat); state.heartbeat=setInterval(driverHeartbeat,30000); }
@@ -88,12 +93,13 @@
     try{ if(navigator.share) await navigator.share(data); else {await navigator.clipboard.writeText(location.href); alert('Link kopiert.');} }catch{}
   }
 
-  document.querySelectorAll('.role-btn').forEach(b=>b.addEventListener('click',()=>setRole(b.dataset.role)));
+  document.querySelectorAll('.role-btn').forEach(b=>b.addEventListener('click',()=>setRole(b.dataset.role,{scroll:true})));
+  document.querySelectorAll('[data-nav-role]').forEach(b=>b.addEventListener('click',()=>setRole(b.dataset.navRole,{scroll:true})));
   $('locateBtn').addEventListener('click',async()=>{try{await locate();}catch(e){alert(e.message)}});
   $('sendDemandBtn').addEventListener('click',sendDemand); $('cancelDemandBtn').addEventListener('click',cancelDemand);
   $('goLiveBtn').addEventListener('click',goLive); $('goOfflineBtn').addEventListener('click',goOffline);
   $('shareBtn').addEventListener('click',share); $('navShare').addEventListener('click',share); $('navRefresh').addEventListener('click',refresh);
 
-  initMap(); setRole('passenger'); refresh(); state.refreshTimer=setInterval(refresh,15000);
+  initMap(); setRole(state.role); refresh(); state.refreshTimer=setInterval(refresh,15000);
   if(state.hotspotId) $('cancelDemandBtn').disabled=false;
 })();

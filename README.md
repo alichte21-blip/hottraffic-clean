@@ -26,3 +26,15 @@ Das Verzeichnis kann als neues GitHub-Repo verwendet werden. Cloudflare Worker/A
 
 ## Wichtig
 Diese Version ist bewusst die neue Basis. Erweiterungen erst wieder hinzufügen, wenn der Kern stabil getestet ist.
+
+
+## 1.0.1
+- Cloudflare Worker-Name auf `hottraffic-clean` bereinigt, damit Clean Build und Altprojekt eindeutig getrennt bleiben.
+
+
+## 1.0.2
+- Direkter Fahrgast/Fahrer-Wechsel in der unteren Navigation.
+- Rolle bleibt nach Reload erhalten.
+- Bedarf senden wird nach dem D1-Write über `/api/state` verifiziert.
+- Fahrer LIVE wird nach dem D1-Heartbeat über `/api/state` verifiziert.
+- Cache-Buster auf 1.0.2.
