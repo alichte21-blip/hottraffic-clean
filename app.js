@@ -252,18 +252,25 @@
   $('goLiveBtn')?.addEventListener('click',goLive); $('goOfflineBtn')?.addEventListener('click',goOffline);
   $('shareBtn')?.addEventListener('click',share); $('navShare')?.addEventListener('click',share);
   const refreshBtn=$('navRefresh');
-  if(refreshBtn){
-    refreshBtn.addEventListener('click',async()=>{
-      if(refreshBtn.disabled) return;
-      refreshBtn.disabled=true;
-      const old=refreshBtn.innerHTML;
-      refreshBtn.innerHTML='<span>↻</span>Lädt…';
-      setText('apiStatus','VERBINDE…');
-      try{ await refresh(); } finally {
-        setTimeout(()=>{ refreshBtn.innerHTML=old; refreshBtn.disabled=false; },350);
-      }
-    });
-  }
+  let manualRefreshRunning=false;
+  window.htManualRefresh=async function(){
+    if(manualRefreshRunning) return false;
+    manualRefreshRunning=true;
+    const btn=$('navRefresh');
+    const old=btn ? btn.innerHTML : '';
+    if(btn){ btn.disabled=true; btn.innerHTML='<span>↻</span>LÄDT…'; }
+    setText('apiStatus','VERBINDE…');
+    try{
+      await refresh();
+      return true;
+    } finally {
+      setTimeout(()=>{
+        if(btn){ btn.innerHTML=old || '<span>↻</span>Refresh'; btn.disabled=false; }
+        manualRefreshRunning=false;
+      },700);
+    }
+  };
+  if(refreshBtn) refreshBtn.onclick=window.htManualRefresh;
 
   if(state.role==='driver' && !state.driverToken) state.role='passenger';
   initMap();

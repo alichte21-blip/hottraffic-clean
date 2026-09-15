@@ -74,12 +74,12 @@
   <nav class="bottom-nav">
     <button class="nav-btn" data-nav-role="passenger"><span>●</span>Fahrgast</button>
     <button class="nav-btn" data-nav-role="driver"><span>◆</span>Fahrer</button>
-    <button class="nav-btn" id="navRefresh"><span>↻</span>Refresh</button>
+    <button class="nav-btn" id="navRefresh" type="button" onclick="window.htManualRefresh&&window.htManualRefresh()"><span>↻</span>Refresh</button>
     <button class="nav-btn" id="navShare"><span>↗</span>Teilen</button>
   </nav>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script src="./app.js?v=1.0.13-direct-driver-button" defer></script>
+<script src="./app.js?v=1.0.16-manual-refresh-fix" defer></script>
 
   <div id="driverAccessModal" class="ht-modal" hidden>
     <div class="ht-modal-backdrop"></div>
