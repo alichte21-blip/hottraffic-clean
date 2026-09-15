@@ -1,0 +1,5 @@
+HOT TRAFFIC 1.0.6 – CARTO BASEMAP KEY
+- CARTO Basemaps API-Key an die bestehende Karten-Tile-URL angehängt.
+- Kartenstil ansonsten unverändert.
+- Cache-Busting auf 1.0.6 aktualisiert.
+- CARTO/OSM Attribution muss sichtbar bleiben.

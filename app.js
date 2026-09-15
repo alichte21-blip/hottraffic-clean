@@ -23,7 +23,7 @@
 
   function initMap(){
     state.map=L.map('map',{zoomControl:true,attributionControl:true}).setView([52.5200,13.4050],12);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:20,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(state.map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=cb1_3k27_1_9605aea3358c7050136f2461',{maxZoom:20,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(state.map);
   }
   function clearLive(){ state.liveLayers.forEach(x=>state.map.removeLayer(x)); state.liveLayers=[]; }
   function drawState(data){

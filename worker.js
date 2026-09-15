@@ -1,4 +1,4 @@
-const API_VERSION='1.0.2-clean';
+const API_VERSION='1.0.5-header-live-marker-fix';
 const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json;charset=UTF-8','cache-control':'no-store',...extra}});
 const now=()=>Date.now();
 const id=()=>crypto.randomUUID();
@@ -61,7 +61,18 @@ async function ensureSchema(env){
   await db.prepare("CREATE INDEX IF NOT EXISTS idx_vehicles_seen ON vehicles(last_seen)").run();
 
   await db.prepare("CREATE TABLE IF NOT EXISTS demand_events (id TEXT PRIMARY KEY, hotspot_id TEXT, service_preference TEXT NOT NULL DEFAULT 'taxi', people INTEGER NOT NULL DEFAULT 1, category TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL)").run();
+  await safeAlter(db,"ALTER TABLE demand_events ADD COLUMN hotspot_id TEXT");
+  await safeAlter(db,"ALTER TABLE demand_events ADD COLUMN service_preference TEXT NOT NULL DEFAULT 'taxi'");
+  await safeAlter(db,"ALTER TABLE demand_events ADD COLUMN people INTEGER NOT NULL DEFAULT 1");
+  await safeAlter(db,"ALTER TABLE demand_events ADD COLUMN category TEXT NOT NULL DEFAULT ''");
+  await safeAlter(db,"ALTER TABLE demand_events ADD COLUMN created_at INTEGER NOT NULL DEFAULT 0");
+
   await db.prepare("CREATE TABLE IF NOT EXISTS ride_outcomes (id TEXT PRIMARY KEY, hotspot_id TEXT, service_preference TEXT NOT NULL DEFAULT 'taxi', outcome TEXT NOT NULL DEFAULT 'unknown', created_at INTEGER NOT NULL)").run();
+  await safeAlter(db,"ALTER TABLE ride_outcomes ADD COLUMN hotspot_id TEXT");
+  await safeAlter(db,"ALTER TABLE ride_outcomes ADD COLUMN service_preference TEXT NOT NULL DEFAULT 'taxi'");
+  await safeAlter(db,"ALTER TABLE ride_outcomes ADD COLUMN outcome TEXT NOT NULL DEFAULT 'unknown'");
+  await safeAlter(db,"ALTER TABLE ride_outcomes ADD COLUMN created_at INTEGER NOT NULL DEFAULT 0");
+
   await db.prepare("CREATE TABLE IF NOT EXISTS daily_activity (day TEXT NOT NULL, role TEXT NOT NULL, client_id TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(day,role,client_id))").run();
   schemaReady=true;
 }
