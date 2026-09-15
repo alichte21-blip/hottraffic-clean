@@ -50,31 +50,110 @@
   }
   async function markActivity(){ try{ await api('/api/activity',{method:'POST',body:JSON.stringify({role:state.role,client_id:state.driverId})}); }catch{} }
 
-  let driverAccessResolve=null;
-  function openDriverAccessModal(){
-    const modal=document.getElementById('driverAccessModal'), input=document.getElementById('driverAccessCode'), error=document.getElementById('driverAccessError');
-    error.textContent=''; input.value=''; modal.hidden=false; document.body.classList.add('modal-open');
-    setTimeout(()=>input.focus(),80);
-    return new Promise(resolve=>{driverAccessResolve=resolve;});
+  let driverAccessPending=null;
+
+  function closeDriverAccessModal(){
+    const modal=document.getElementById('driverAccessModal');
+    if(modal) modal.hidden=true;
+    document.body.classList.remove('modal-open');
   }
-  function closeDriverAccessModal(){document.getElementById('driverAccessModal').hidden=true;document.body.classList.remove('modal-open');}
-  function finishDriverAccess(value){const resolve=driverAccessResolve;driverAccessResolve=null;if(!value)closeDriverAccessModal();if(resolve)resolve(value);}
-  function showDriverAccessError(message){const e=document.getElementById('driverAccessError'),i=document.getElementById('driverAccessCode');e.textContent=message;i.select();i.focus();}
+
+  function showDriverAccessError(message){
+    const error=document.getElementById('driverAccessError');
+    const input=document.getElementById('driverAccessCode');
+    if(error) error.textContent=message;
+    if(input){ input.select(); input.focus(); }
+  }
 
   async function unlockDriver(){
     if(state.driverToken){
       try{ const v=await api('/api/driver/verify'); if(v.ok) return true; }catch{}
       state.driverToken=''; sessionStorage.removeItem('ht_driver_token');
     }
-    const code=await openDriverAccessModal();
-    if(!code) return false;
+
+    if(driverAccessPending) return driverAccessPending;
+
+    driverAccessPending=new Promise(resolve=>{
+      const modal=document.getElementById('driverAccessModal');
+      const input=document.getElementById('driverAccessCode');
+      const error=document.getElementById('driverAccessError');
+      const cancel=document.getElementById('driverAccessCancel');
+      const submit=document.getElementById('driverAccessSubmit');
+
+      if(!modal||!input||!error||!cancel||!submit){
+        driverAccessPending=null;
+        resolve(false);
+        return;
+      }
+
+      error.textContent='';
+      input.value='';
+      modal.hidden=false;
+      document.body.classList.add('modal-open');
+      setTimeout(()=>input.focus(),80);
+
+      let busy=false;
+      const cleanup=()=>{
+        cancel.onclick=null; submit.onclick=null; input.onkeydown=null;
+        driverAccessPending=null;
+      };
+      const cancelAccess=()=>{
+        if(busy) return;
+        cleanup(); closeDriverAccessModal(); resolve(false);
+      };
+      const submitAccess=async()=>{
+        if(busy) return;
+        const code=input.value.trim();
+        if(!code){ showDriverAccessError('Bitte Fahrer-Code eingeben.'); return; }
+        busy=true; submit.disabled=true; submit.textContent='Prüfe…'; error.textContent='';
+        try{
+          const r=await api('/api/driver/login',{method:'POST',body:JSON.stringify({code})});
+          if(!r?.token) throw new Error('Keine Fahrer-Freigabe erhalten.');
+          state.driverToken=r.token;
+          sessionStorage.setItem('ht_driver_token',r.token);
+          cleanup(); closeDriverAccessModal(); resolve(true);
+        }catch(e){
+          busy=false; submit.disabled=false; submit.textContent='Freischalten';
+          showDriverAccessError(e.message||'Fahrer-Code ist nicht korrekt.');
+        }
+      };
+
+      cancel.onclick=cancelAccess;
+      submit.onclick=submitAccess;
+      input.onkeydown=e=>{
+        if(e.key==='Enter'){e.preventDefault();submitAccess();}
+        if(e.key==='Escape'){e.preventDefault();cancelAccess();}
+      };
+    });
+
+    return driverAccessPending;
+  }
+
+  window.htDriverAccessSubmit=async function(){
+    const input=document.getElementById('driverAccessCode');
+    const submit=document.getElementById('driverAccessSubmit');
+    if(!input||!submit) return;
+    const code=input.value.trim();
+    if(!code){ showDriverAccessError('Bitte Fahrer-Code eingeben.'); return; }
+    submit.disabled=true; submit.textContent='Prüfe…';
     try{
       const r=await api('/api/driver/login',{method:'POST',body:JSON.stringify({code})});
-      state.driverToken=r.token; sessionStorage.setItem('ht_driver_token',r.token);
+      if(!r?.token) throw new Error('Keine Fahrer-Freigabe erhalten.');
+      state.driverToken=r.token;
+      sessionStorage.setItem('ht_driver_token',r.token);
       closeDriverAccessModal();
-      return true;
-    }catch(e){ showDriverAccessError(e.message||'Fahrer-Code ist nicht korrekt.'); return false; }
-  }
+      state.role='driver';
+      document.querySelectorAll('.role-btn').forEach(b=>b.classList.toggle('active',b.dataset.role==='driver'));
+      document.querySelectorAll('.role-panel').forEach(p=>p.classList.toggle('active',p.id==='driverPanel'));
+      document.getElementById('roleLabel').textContent='Fahrer';
+      setTimeout(()=>{state.map?.invalidateSize();refresh();},120);
+    }catch(e){
+      showDriverAccessError(e.message||'Fahrer-Code ist nicht korrekt.');
+    }finally{
+      submit.disabled=false; submit.textContent='Freischalten';
+    }
+  };
+  window.htDriverAccessCancel=function(){ closeDriverAccessModal(); };
 
   async function chooseRole(role,{scroll=false}={}){
     if(role==='driver' && !(await unlockDriver())) return;
@@ -84,10 +163,7 @@
   function setRole(role,{scroll=false}={}){
     if(!['passenger','driver'].includes(role)) role='passenger';
     state.role=role; localStorage.setItem('ht_role',role);
-    document.getElementById('driverAccessCancel')?.addEventListener('click',()=>finishDriverAccess(''));
-  document.getElementById('driverAccessSubmit')?.addEventListener('click',()=>{const c=document.getElementById('driverAccessCode').value.trim();if(c)finishDriverAccess(c);});
-  document.getElementById('driverAccessCode')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const c=e.currentTarget.value.trim();if(c)finishDriverAccess(c);}if(e.key==='Escape')finishDriverAccess('');});
-  document.querySelectorAll('.role-btn').forEach(b=>b.classList.toggle('active',b.dataset.role===role));
+    document.querySelectorAll('.role-btn').forEach(b=>b.classList.toggle('active',b.dataset.role===role));
     $('passengerPanel').classList.toggle('active',role==='passenger'); $('driverPanel').classList.toggle('active',role==='driver');
     setText('mapEyebrow',role==='passenger'?'FAHRGAST-MODUS':'FAHRER-MODUS'); setText('mapTitle',role==='passenger'?'Taxis in deiner Nähe':'Live-Bedarf in deiner Nähe');
     document.querySelectorAll('[data-nav-role]').forEach(b=>b.classList.toggle('active',b.dataset.navRole===role));

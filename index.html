@@ -7,7 +7,7 @@
   <title>HOT TRAFFIC TAXI</title>
   <link rel="preconnect" href="https://unpkg.com" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <link rel="stylesheet" href="./style.css?v=1.0.8-driver-access" />
+  <link rel="stylesheet" href="./style.css?v=1.0.13-direct-driver-button" />
 </head>
 <body>
 <div class="app-shell">
@@ -79,7 +79,7 @@
   </nav>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script src="./app.js?v=1.0.13-driver-access"></script>
+<script src="./app.js?v=1.0.13-direct-driver-button" defer></script>
 
   <div id="driverAccessModal" class="ht-modal" hidden>
     <div class="ht-modal-backdrop"></div>
@@ -91,8 +91,8 @@
       <input id="driverAccessCode" type="password" autocomplete="off" placeholder="Code eingeben">
       <div id="driverAccessError" class="driver-access-error" aria-live="polite"></div>
       <div class="driver-access-actions">
-        <button id="driverAccessCancel" type="button" class="driver-access-cancel">Abbrechen</button>
-        <button id="driverAccessSubmit" type="button" class="driver-access-submit">Freischalten</button>
+        <button id="driverAccessCancel" type="button" onclick="window.htDriverAccessCancel&&window.htDriverAccessCancel()" class="driver-access-cancel">Abbrechen</button>
+        <button id="driverAccessSubmit" type="button" onclick="window.htDriverAccessSubmit&&window.htDriverAccessSubmit()" class="driver-access-submit">Freischalten</button>
       </div>
       <div class="driver-access-note">LIVE MOBILITY · DRIVER ACCESS</div>
     </section>
