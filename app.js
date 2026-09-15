@@ -19,7 +19,7 @@
   }
 
   function taxiIcon(){ return L.icon({iconUrl:'./premium-taxi-marker.webp',iconSize:[44,63],iconAnchor:[22,32],popupAnchor:[0,-28]}); }
-  function passengerIcon(){ return L.divIcon({className:'passenger-marker',iconSize:[46,58],iconAnchor:[23,51],html:'<div class="passenger-pin"><i class="halo"></i><i class="person"></i><i class="bag"></i></div>'}); }
+  function passengerIcon(){ return L.icon({iconUrl:'./premium-passenger-marker.webp',iconSize:[48,48],iconAnchor:[24,44],popupAnchor:[0,-38]}); }
   function userIcon(){ return L.divIcon({className:'user-marker',iconSize:[18,18],iconAnchor:[9,9],html:'<div class="user-dot"></div>'}); }
 
   function initMap(){
