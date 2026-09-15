@@ -30,19 +30,30 @@
   function validCoord(v){ const n=Number(v); return Number.isFinite(n); }
   function drawState(data){
     clearLive(); const hs=Array.isArray(data.hotspots)?data.hotspots:[], vs=Array.isArray(data.vehicles)?data.vehicles:[];
+    const liveCoords=[];
     setText('driverCount',vs.length); setText('demandCount',hs.length);
     vs.forEach(v=>{
       if(!validCoord(v.lat)||!validCoord(v.lng)) return;
-      const m=L.marker([Number(v.lat),Number(v.lng)],{icon:taxiIcon(),zIndexOffset:700,keyboard:false})
+      const pos=[Number(v.lat),Number(v.lng)];
+      const m=L.marker(pos,{icon:taxiIcon(),zIndexOffset:700,keyboard:false})
         .addTo(state.map).bindPopup('<b>Taxi LIVE</b><br>Zuletzt aktualisiert');
-      state.liveLayers.push(m);
+      state.liveLayers.push(m); liveCoords.push(pos);
     });
     hs.forEach(h=>{
       if(!validCoord(h.lat)||!validCoord(h.lng)) return;
-      const m=L.marker([Number(h.lat),Number(h.lng)],{icon:passengerIcon(),zIndexOffset:800,keyboard:false})
+      const pos=[Number(h.lat),Number(h.lng)];
+      const m=L.marker(pos,{icon:passengerIcon(),zIndexOffset:800,keyboard:false})
         .addTo(state.map).bindPopup(`<b>${escapeHtml(h.people)} Fahrgast${Number(h.people)>1?'gäste':''}</b><br>${escapeHtml(h.category||'Bedarf')}${h.destination?'<br>Ziel: '+escapeHtml(h.destination):''}`);
-      state.liveLayers.push(m);
+      state.liveLayers.push(m); liveCoords.push(pos);
     });
+    if(liveCoords.length && state.map){
+      const bounds=state.map.getBounds();
+      const anyVisible=liveCoords.some(pos=>bounds.contains(pos));
+      if(!anyVisible){
+        if(liveCoords.length===1) state.map.setView(liveCoords[0],Math.max(state.map.getZoom(),15));
+        else state.map.fitBounds(liveCoords,{padding:[40,40],maxZoom:15});
+      }
+    }
   }
   async function refresh(){
     try{ const data=await api('/api/state'); drawState(data); setText('apiStatus','ONLINE'); $('apiStatus').style.color='#39e58c'; }
@@ -236,10 +247,23 @@
 
   document.querySelectorAll('.role-btn').forEach(b=>b.addEventListener('click',()=>chooseRole(b.dataset.role,{scroll:true})));
   document.querySelectorAll('[data-nav-role]').forEach(b=>b.addEventListener('click',()=>chooseRole(b.dataset.navRole,{scroll:true})));
-  $('locateBtn').addEventListener('click',async()=>{try{await locate();}catch(e){alert(e.message)}});
-  $('sendDemandBtn').addEventListener('click',sendDemand); $('cancelDemandBtn').addEventListener('click',cancelDemand);
-  $('goLiveBtn').addEventListener('click',goLive); $('goOfflineBtn').addEventListener('click',goOffline);
-  $('shareBtn').addEventListener('click',share); $('navShare').addEventListener('click',share); $('navRefresh').addEventListener('click',refresh);
+  $('locateBtn')?.addEventListener('click',async()=>{try{await locate();}catch(e){alert(e.message)}});
+  $('sendDemandBtn')?.addEventListener('click',sendDemand); $('cancelDemandBtn')?.addEventListener('click',cancelDemand);
+  $('goLiveBtn')?.addEventListener('click',goLive); $('goOfflineBtn')?.addEventListener('click',goOffline);
+  $('shareBtn')?.addEventListener('click',share); $('navShare')?.addEventListener('click',share);
+  const refreshBtn=$('navRefresh');
+  if(refreshBtn){
+    refreshBtn.addEventListener('click',async()=>{
+      if(refreshBtn.disabled) return;
+      refreshBtn.disabled=true;
+      const old=refreshBtn.innerHTML;
+      refreshBtn.innerHTML='<span>↻</span>Lädt…';
+      setText('apiStatus','VERBINDE…');
+      try{ await refresh(); } finally {
+        setTimeout(()=>{ refreshBtn.innerHTML=old; refreshBtn.disabled=false; },350);
+      }
+    });
+  }
 
   if(state.role==='driver' && !state.driverToken) state.role='passenger';
   initMap();
