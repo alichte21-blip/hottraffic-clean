@@ -1,4 +1,4 @@
-const API_VERSION='1.0.14-worker-json-fix';
+const API_VERSION='1.0.15-driver-code';
 const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json;charset=UTF-8','cache-control':'no-store',...extra}});
 const now=()=>Date.now();
 const id=()=>crypto.randomUUID();
@@ -89,7 +89,7 @@ function hotspotRow(r){
 
 
 function driverAccessCode(env){
-  return String(env.DRIVER_ACCESS_CODE || 'HT-TAXI-2026');
+  return String(env.DRIVER_ACCESS_CODE || 'Taxi2026');
 }
 function newDriverToken(){
   return crypto.randomUUID().replaceAll('-','') + crypto.randomUUID().replaceAll('-','');
