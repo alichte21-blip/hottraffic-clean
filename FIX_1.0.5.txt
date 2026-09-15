@@ -1,0 +1,6 @@
+HOT TRAFFIC 1.0.5
+- Headerbild auf reines Branding beschnitten: kein statischer Kartenrest mehr.
+- D1-Legacy-Migration fuer demand_events/ride_outcomes ergaenzt.
+- Client-ID-Fallback fuer Browser/WebViews ohne crypto.randomUUID.
+- Leaflet invalidateSize nach Header/Moduswechsel.
+- Bestehendes Premium-Layout und Taxi/Fahrgast-Funktionen sonst unveraendert.

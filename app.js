@@ -3,7 +3,7 @@
   const state = {
     role: localStorage.getItem('ht_role') || 'passenger', map: null, userPos: null, userMarker: null,
     liveLayers: [], hotspotId: localStorage.getItem('ht_hotspot_id') || '',
-    driverId: localStorage.getItem('ht_driver_id') || crypto.randomUUID(),
+    driverId: localStorage.getItem('ht_driver_id') || ((globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('driver-'+Date.now()+'-'+Math.random().toString(36).slice(2))),
     driverLive: false, heartbeat: null, refreshTimer: null
   };
   localStorage.setItem('ht_driver_id', state.driverId);
@@ -46,6 +46,7 @@
     setText('mapEyebrow',role==='passenger'?'FAHRGAST-MODUS':'FAHRER-MODUS'); setText('mapTitle',role==='passenger'?'Taxis in deiner Nähe':'Live-Bedarf in deiner Nähe');
     document.querySelectorAll('[data-nav-role]').forEach(b=>b.classList.toggle('active',b.dataset.navRole===role));
     markActivity();
+    setTimeout(()=>{ try{ state.map && state.map.invalidateSize(); }catch{} },120);
     if(scroll){ const panel=role==='passenger'?$('passengerPanel'):$('driverPanel'); panel?.scrollIntoView({behavior:'smooth',block:'start'}); }
   }
 
@@ -117,6 +118,9 @@
   $('goLiveBtn').addEventListener('click',goLive); $('goOfflineBtn').addEventListener('click',goOffline);
   $('shareBtn').addEventListener('click',share); $('navShare').addEventListener('click',share); $('navRefresh').addEventListener('click',refresh);
 
-  initMap(); setRole(state.role); refresh(); reconcileOwnDemand(); state.refreshTimer=setInterval(()=>{refresh(); reconcileOwnDemand();},15000);
+  initMap();
+  const brandImg=document.querySelector('.brand-banner-img');
+  if(brandImg){ brandImg.addEventListener('load',()=>setTimeout(()=>{try{state.map.invalidateSize()}catch{}},80),{once:true}); }
+  setRole(state.role); refresh(); reconcileOwnDemand(); state.refreshTimer=setInterval(()=>{refresh(); reconcileOwnDemand();},15000);
   if(state.hotspotId) $('cancelDemandBtn').disabled=false;
 })();
