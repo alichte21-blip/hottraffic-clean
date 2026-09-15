@@ -1,4 +1,4 @@
-const API_VERSION='1.0.5-header-live-marker-fix';
+const API_VERSION='1.0.8-driver-access';
 const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json;charset=UTF-8','cache-control':'no-store',...extra}});
 const now=()=>Date.now();
 const id=()=>crypto.randomUUID();
@@ -74,6 +74,7 @@ async function ensureSchema(env){
   await safeAlter(db,"ALTER TABLE ride_outcomes ADD COLUMN created_at INTEGER NOT NULL DEFAULT 0");
 
   await db.prepare("CREATE TABLE IF NOT EXISTS daily_activity (day TEXT NOT NULL, role TEXT NOT NULL, client_id TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(day,role,client_id))").run();
+  await db.prepare("CREATE TABLE IF NOT EXISTS driver_access (token TEXT PRIMARY KEY, created_at INTEGER NOT NULL, revoked INTEGER NOT NULL DEFAULT 0)").run();
   schemaReady=true;
 }
 
@@ -84,6 +85,20 @@ function hotspotRow(r){
     time_window:Number(r.time_window)||30,service_preference:'taxi',
     created_at:Number(r.created_at),expires_at:Number(r.expires_at),status:r.status||'active'
   };
+}
+
+
+function driverAccessCode(env){
+  return String(env.DRIVER_ACCESS_CODE || 'HT-TAXI-2026');
+}
+function newDriverToken(){
+  return crypto.randomUUID().replaceAll('-','') + crypto.randomUUID().replaceAll('-','');
+}
+async function requireDriverAccess(req,env){
+  const token=req.headers.get('x-driver-token')||'';
+  if(!token) return false;
+  const row=await env.DB.prepare("SELECT token FROM driver_access WHERE token=? AND revoked=0").bind(token).first();
+  return !!row;
 }
 
 export default {
@@ -177,11 +192,31 @@ export default {
 
    const vm=u.pathname.match(/^\/api\/vehicles\/([a-zA-Z0-9-]+)$/);
    if(vm && req.method==='DELETE'){
+      if(!(await requireDriverAccess(req,env))) return jsonResponse({error:'Fahrerzugang erforderlich.'},403);
     await db.prepare('DELETE FROM vehicles WHERE id=?').bind(vm[1]).run();
     return json({ok:true,id:vm[1],offline:true});
    }
 
-   if(u.pathname==='/api/vehicles/heartbeat' && req.method==='POST'){
+   if(u.pathname==='/api/driver/login' && req.method==='POST'){
+      const b=await json(req);
+      if(String(b.code||'')!==driverAccessCode(env)) return jsonResponse({error:'Fahrer-Code ist nicht korrekt.'},403);
+      const token=newDriverToken();
+      await env.DB.prepare("INSERT INTO driver_access(token,created_at,revoked) VALUES(?,?,0)").bind(token,now()).run();
+      return jsonResponse({ok:true,token});
+    }
+
+    if(u.pathname==='/api/driver/verify' && req.method==='GET'){
+      return jsonResponse({ok:await requireDriverAccess(req,env)});
+    }
+
+    if(u.pathname==='/api/driver/logout' && req.method==='POST'){
+      const token=req.headers.get('x-driver-token')||'';
+      if(token) await env.DB.prepare("UPDATE driver_access SET revoked=1 WHERE token=?").bind(token).run();
+      return jsonResponse({ok:true});
+    }
+
+    if(u.pathname==='/api/vehicles/heartbeat' && req.method==='POST'){
+      if(!(await requireDriverAccess(req,env))) return jsonResponse({error:'Fahrerzugang erforderlich.'},403);
     const b=await req.json(); const lat=Number(b.lat),lng=Number(b.lng);
     if(!Number.isFinite(lat)||!Number.isFinite(lng)||Math.abs(lat)>90||Math.abs(lng)>180) return json({error:'location_required'},400);
     const vid=String(b.id||id()).slice(0,80), t=now();

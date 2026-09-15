@@ -4,14 +4,15 @@
     role: localStorage.getItem('ht_role') || 'passenger', map: null, userPos: null, userMarker: null,
     liveLayers: [], hotspotId: localStorage.getItem('ht_hotspot_id') || '',
     driverId: localStorage.getItem('ht_driver_id') || ((globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('driver-'+Date.now()+'-'+Math.random().toString(36).slice(2))),
-    driverLive: false, heartbeat: null, refreshTimer: null
+    driverLive: false, heartbeat: null, refreshTimer: null, driverToken: sessionStorage.getItem('ht_driver_token') || ''
   };
   localStorage.setItem('ht_driver_id', state.driverId);
 
   function setText(id, text){ const el=$(id); if(el) el.textContent=text; }
   function escapeHtml(s=''){ return String(s).replace(/[&<>'"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
   async function api(path, options={}){
-    const res = await fetch(path,{cache:'no-store',headers:{'content-type':'application/json',...(options.headers||{})},...options});
+    const driverHeader=(path.startsWith('/api/vehicles')||path.startsWith('/api/driver/')) && state.driverToken ? {'x-driver-token':state.driverToken} : {};
+    const res = await fetch(path,{cache:'no-store',headers:{'content-type':'application/json',...driverHeader,...(options.headers||{})},...options});
     let data={}; try{ data=await res.json(); }catch{}
     if(!res.ok) throw new Error(data.message||data.error||`HTTP ${res.status}`);
     return data;
@@ -26,17 +27,47 @@
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=cb1_3k27_1_9605aea3358c7050136f2461',{maxZoom:20,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(state.map);
   }
   function clearLive(){ state.liveLayers.forEach(x=>state.map.removeLayer(x)); state.liveLayers=[]; }
+  function validCoord(v){ const n=Number(v); return Number.isFinite(n); }
   function drawState(data){
-    clearLive(); const hs=data.hotspots||[], vs=data.vehicles||[];
+    clearLive(); const hs=Array.isArray(data.hotspots)?data.hotspots:[], vs=Array.isArray(data.vehicles)?data.vehicles:[];
     setText('driverCount',vs.length); setText('demandCount',hs.length);
-    vs.forEach(v=>{ const m=L.marker([v.lat,v.lng],{icon:taxiIcon(),zIndexOffset:500}).addTo(state.map).bindPopup('<b>Taxi LIVE</b><br>Zuletzt aktualisiert'); state.liveLayers.push(m); });
-    hs.forEach(h=>{ const m=L.marker([h.lat,h.lng],{icon:passengerIcon(),zIndexOffset:600}).addTo(state.map).bindPopup(`<b>${escapeHtml(h.people)} Fahrgast${Number(h.people)>1?'gäste':''}</b><br>${escapeHtml(h.category||'Bedarf')}${h.destination?'<br>Ziel: '+escapeHtml(h.destination):''}`); state.liveLayers.push(m); });
+    vs.forEach(v=>{
+      if(!validCoord(v.lat)||!validCoord(v.lng)) return;
+      const m=L.marker([Number(v.lat),Number(v.lng)],{icon:taxiIcon(),zIndexOffset:700,keyboard:false})
+        .addTo(state.map).bindPopup('<b>Taxi LIVE</b><br>Zuletzt aktualisiert');
+      state.liveLayers.push(m);
+    });
+    hs.forEach(h=>{
+      if(!validCoord(h.lat)||!validCoord(h.lng)) return;
+      const m=L.marker([Number(h.lat),Number(h.lng)],{icon:passengerIcon(),zIndexOffset:800,keyboard:false})
+        .addTo(state.map).bindPopup(`<b>${escapeHtml(h.people)} Fahrgast${Number(h.people)>1?'gäste':''}</b><br>${escapeHtml(h.category||'Bedarf')}${h.destination?'<br>Ziel: '+escapeHtml(h.destination):''}`);
+      state.liveLayers.push(m);
+    });
   }
   async function refresh(){
     try{ const data=await api('/api/state'); drawState(data); setText('apiStatus','ONLINE'); $('apiStatus').style.color='#39e58c'; }
     catch(e){ setText('apiStatus','OFFLINE'); $('apiStatus').style.color='#ff5d6c'; }
   }
   async function markActivity(){ try{ await api('/api/activity',{method:'POST',body:JSON.stringify({role:state.role,client_id:state.driverId})}); }catch{} }
+
+  async function unlockDriver(){
+    if(state.driverToken){
+      try{ const v=await api('/api/driver/verify'); if(v.ok) return true; }catch{}
+      state.driverToken=''; sessionStorage.removeItem('ht_driver_token');
+    }
+    const code=prompt('FAHRERZUGANG\nBitte Fahrer-Code eingeben:');
+    if(!code) return false;
+    try{
+      const r=await api('/api/driver/login',{method:'POST',body:JSON.stringify({code})});
+      state.driverToken=r.token; sessionStorage.setItem('ht_driver_token',r.token);
+      return true;
+    }catch(e){ alert(e.message||'Fahrerzugang nicht möglich.'); return false; }
+  }
+
+  async function chooseRole(role,{scroll=false}={}){
+    if(role==='driver' && !(await unlockDriver())) return;
+    setRole(role,{scroll});
+  }
 
   function setRole(role,{scroll=false}={}){
     if(!['passenger','driver'].includes(role)) role='passenger';
@@ -46,7 +77,7 @@
     setText('mapEyebrow',role==='passenger'?'FAHRGAST-MODUS':'FAHRER-MODUS'); setText('mapTitle',role==='passenger'?'Taxis in deiner Nähe':'Live-Bedarf in deiner Nähe');
     document.querySelectorAll('[data-nav-role]').forEach(b=>b.classList.toggle('active',b.dataset.navRole===role));
     markActivity();
-    setTimeout(()=>{ try{ state.map && state.map.invalidateSize(); }catch{} },120);
+    setTimeout(()=>{ try{ state.map && state.map.invalidateSize(); refresh(); }catch{} },120);
     if(scroll){ const panel=role==='passenger'?$('passengerPanel'):$('driverPanel'); panel?.scrollIntoView({behavior:'smooth',block:'start'}); }
   }
 
@@ -58,6 +89,7 @@
         if(state.userMarker) state.map.removeLayer(state.userMarker);
         state.userMarker=L.marker([state.userPos.lat,state.userPos.lng],{icon:userIcon(),zIndexOffset:1000}).addTo(state.map);
         if(center) state.map.setView([state.userPos.lat,state.userPos.lng],15,{animate:true});
+        setTimeout(()=>{ try{ state.map.invalidateSize(); }catch{} },80);
         resolve(state.userPos);
       },err=>reject(new Error(err.code===1?'Standortfreigabe wurde abgelehnt.':'Standort konnte nicht ermittelt werden.')),{enableHighAccuracy:true,timeout:12000,maximumAge:15000});
     });
@@ -111,13 +143,14 @@
     try{ if(navigator.share) await navigator.share(data); else {await navigator.clipboard.writeText(location.href); alert('Link kopiert.');} }catch{}
   }
 
-  document.querySelectorAll('.role-btn').forEach(b=>b.addEventListener('click',()=>setRole(b.dataset.role,{scroll:true})));
-  document.querySelectorAll('[data-nav-role]').forEach(b=>b.addEventListener('click',()=>setRole(b.dataset.navRole,{scroll:true})));
+  document.querySelectorAll('.role-btn').forEach(b=>b.addEventListener('click',()=>chooseRole(b.dataset.role,{scroll:true})));
+  document.querySelectorAll('[data-nav-role]').forEach(b=>b.addEventListener('click',()=>chooseRole(b.dataset.navRole,{scroll:true})));
   $('locateBtn').addEventListener('click',async()=>{try{await locate();}catch(e){alert(e.message)}});
   $('sendDemandBtn').addEventListener('click',sendDemand); $('cancelDemandBtn').addEventListener('click',cancelDemand);
   $('goLiveBtn').addEventListener('click',goLive); $('goOfflineBtn').addEventListener('click',goOffline);
   $('shareBtn').addEventListener('click',share); $('navShare').addEventListener('click',share); $('navRefresh').addEventListener('click',refresh);
 
+  if(state.role==='driver' && !state.driverToken) state.role='passenger';
   initMap();
   const brandImg=document.querySelector('.brand-banner-img');
   if(brandImg){ brandImg.addEventListener('load',()=>setTimeout(()=>{try{state.map.invalidateSize()}catch{}},80),{once:true}); }
