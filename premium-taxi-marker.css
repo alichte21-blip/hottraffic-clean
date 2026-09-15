@@ -1,0 +1,11 @@
+/* HOT TRAFFIC TAXI 1.0.17 — isolated premium TAXI marker only */
+#map .ht-premium-taxi{background:transparent!important;border:0!important;overflow:visible!important}
+#map .taxi-premium{position:relative;width:54px;height:36px;display:block;overflow:visible;filter:drop-shadow(0 7px 6px rgba(0,0,0,.32)) drop-shadow(0 0 6px rgba(255,196,0,.18))}
+#map .taxi-premium-body{position:absolute;left:2px;right:2px;bottom:7px;height:17px;border-radius:7px 7px 5px 5px;background:linear-gradient(180deg,#ffe66a 0%,#ffd21c 38%,#e8a900 100%);border:1px solid #735700;box-shadow:inset 0 1px 0 rgba(255,255,255,.72)}
+#map .taxi-premium-cabin{position:absolute;left:11px;top:5px;width:32px;height:17px;clip-path:polygon(15% 100%,28% 8%,72% 8%,88% 100%);background:linear-gradient(180deg,#f8ca20,#dca000);border-radius:7px 7px 2px 2px;z-index:2}
+#map .taxi-premium-cabin i{position:absolute;left:6px;right:6px;top:4px;height:8px;clip-path:polygon(9% 100%,18% 0,82% 0,91% 100%);background:linear-gradient(180deg,#486675,#182d39);border:1px solid #10212b}
+#map .taxi-premium-sign{position:absolute;z-index:5;left:50%;top:0;transform:translateX(-50%);height:7px;line-height:6px;padding:0 4px;border-radius:2px;background:#fff3a3;border:1px solid #715800;color:#241b00;font:900 5px/6px system-ui,-apple-system,Segoe UI,Arial,sans-serif;letter-spacing:.35px;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+#map .taxi-premium .wheel{position:absolute;z-index:4;bottom:2px;width:10px;height:10px;border-radius:50%;background:#101214;border:2px solid #4a5054;box-shadow:inset 0 0 0 2px #171a1c}
+#map .taxi-premium .wl{left:8px}#map .taxi-premium .wr{right:8px}
+#map .taxi-premium .lamp{position:absolute;z-index:4;bottom:4px;width:6px;height:4px;border-radius:2px;background:#fff8cf;border:1px solid #947500}#map .taxi-premium .lamp.l{left:4px}#map .taxi-premium .lamp.r{right:4px}
+#map .taxi-premium .grille{position:absolute;z-index:4;left:50%;bottom:3px;transform:translateX(-50%);width:14px;height:4px;border-radius:1px;background:repeating-linear-gradient(90deg,#283137 0 2px,#7d8b91 2px 3px)}

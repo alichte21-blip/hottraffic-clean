@@ -18,7 +18,7 @@
     return data;
   }
 
-  function taxiIcon(){ return L.divIcon({className:'taxi-marker',iconSize:[44,28],iconAnchor:[22,14],html:'<div class="taxi-pin"><i class="roof"></i><i class="body"></i><i class="wheel w1"></i><i class="wheel w2"></i></div>'}); }
+  function taxiIcon(){ return L.divIcon({className:'taxi-marker ht-premium-taxi',iconSize:[54,36],iconAnchor:[27,18],html:'<div class="taxi-premium"><div class="taxi-premium-sign">TAXI</div><div class="taxi-premium-cabin"><i></i></div><div class="taxi-premium-body"><b class="lamp l"></b><b class="lamp r"></b><span class="grille"></span></div><i class="wheel wl"></i><i class="wheel wr"></i></div>'}); }
   function passengerIcon(){ return L.divIcon({className:'passenger-marker',iconSize:[46,58],iconAnchor:[23,51],html:'<div class="passenger-pin"><i class="halo"></i><i class="person"></i><i class="bag"></i></div>'}); }
   function userIcon(){ return L.divIcon({className:'user-marker',iconSize:[18,18],iconAnchor:[9,9],html:'<div class="user-dot"></div>'}); }
 
