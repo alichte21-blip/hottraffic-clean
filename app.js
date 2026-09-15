@@ -18,7 +18,7 @@
   }
 
   function taxiIcon(){ return L.divIcon({className:'taxi-marker',iconSize:[44,28],iconAnchor:[22,14],html:'<div class="taxi-pin"><i class="roof"></i><i class="body"></i><i class="wheel w1"></i><i class="wheel w2"></i></div>'}); }
-  function passengerIcon(){ return L.divIcon({className:'passenger-marker',iconSize:[36,48],iconAnchor:[18,42],html:'<div class="passenger-pin"><i class="halo"></i><i class="person"></i><i class="bag"></i></div>'}); }
+  function passengerIcon(){ return L.divIcon({className:'passenger-marker',iconSize:[46,58],iconAnchor:[23,51],html:'<div class="passenger-pin"><i class="halo"></i><i class="person"></i><i class="bag"></i></div>'}); }
   function userIcon(){ return L.divIcon({className:'user-marker',iconSize:[18,18],iconAnchor:[9,9],html:'<div class="user-dot"></div>'}); }
 
   function initMap(){

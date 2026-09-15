@@ -44,3 +44,9 @@ Diese Version ist bewusst die neue Basis. Erweiterungen erst wieder hinzufügen,
 - Demand expiry now follows the selected time_window (default 30 minutes).
 - Ending a demand is verified against /api/state before the UI reports success.
 - Stale local demand IDs are automatically reconciled after expiry/end.
+
+
+## 1.0.4 — Step 1 Branding
+- Functional 1.0.3 live chain unchanged.
+- Full-width HOT TRAFFIC TAXI banner added.
+- Passenger marker enlarged/refined to approved cyan premium style.
