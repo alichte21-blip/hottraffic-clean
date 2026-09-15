@@ -1,0 +1,7 @@
+HOT TRAFFIC 1.0.7 – LIVE MARKER FIX
+- CARTO-Key/Kartenstil aus 1.0.6 unverändert.
+- Marker-Live-Daten werden defensiv als Zahlen gerendert.
+- Leaflet Marker-Pane und Custom Marker explizit sichtbar.
+- Nach Rollenwechsel wird die Karte neu vermessen und LIVE-Status frisch geladen.
+- Nach Standortbestimmung wird Leaflet erneut vermessen.
+- Header/Premium-UI nicht verändert.
