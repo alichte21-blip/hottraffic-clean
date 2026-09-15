@@ -1,4 +1,4 @@
-const API_VERSION='1.0.13-direct-driver-button';
+const API_VERSION='1.0.14-worker-json-fix';
 const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json;charset=UTF-8','cache-control':'no-store',...extra}});
 const now=()=>Date.now();
 const id=()=>crypto.randomUUID();
@@ -192,31 +192,31 @@ export default {
 
    const vm=u.pathname.match(/^\/api\/vehicles\/([a-zA-Z0-9-]+)$/);
    if(vm && req.method==='DELETE'){
-      if(!(await requireDriverAccess(req,env))) return jsonResponse({error:'Fahrerzugang erforderlich.'},403);
+      if(!(await requireDriverAccess(req,env))) return json({error:'Fahrerzugang erforderlich.'},403);
     await db.prepare('DELETE FROM vehicles WHERE id=?').bind(vm[1]).run();
     return json({ok:true,id:vm[1],offline:true});
    }
 
    if(u.pathname==='/api/driver/login' && req.method==='POST'){
       const b=await json(req);
-      if(String(b.code||'')!==driverAccessCode(env)) return jsonResponse({error:'Fahrer-Code ist nicht korrekt.'},403);
+      if(String(b.code||'')!==driverAccessCode(env)) return json({error:'Fahrer-Code ist nicht korrekt.'},403);
       const token=newDriverToken();
       await env.DB.prepare("INSERT INTO driver_access(token,created_at,revoked) VALUES(?,?,0)").bind(token,now()).run();
-      return jsonResponse({ok:true,token});
+      return json({ok:true,token});
     }
 
     if(u.pathname==='/api/driver/verify' && req.method==='GET'){
-      return jsonResponse({ok:await requireDriverAccess(req,env)});
+      return json({ok:await requireDriverAccess(req,env)});
     }
 
     if(u.pathname==='/api/driver/logout' && req.method==='POST'){
       const token=req.headers.get('x-driver-token')||'';
       if(token) await env.DB.prepare("UPDATE driver_access SET revoked=1 WHERE token=?").bind(token).run();
-      return jsonResponse({ok:true});
+      return json({ok:true});
     }
 
     if(u.pathname==='/api/vehicles/heartbeat' && req.method==='POST'){
-      if(!(await requireDriverAccess(req,env))) return jsonResponse({error:'Fahrerzugang erforderlich.'},403);
+      if(!(await requireDriverAccess(req,env))) return json({error:'Fahrerzugang erforderlich.'},403);
     const b=await req.json(); const lat=Number(b.lat),lng=Number(b.lng);
     if(!Number.isFinite(lat)||!Number.isFinite(lng)||Math.abs(lat)>90||Math.abs(lng)>180) return json({error:'location_required'},400);
     const vid=String(b.id||id()).slice(0,80), t=now();
